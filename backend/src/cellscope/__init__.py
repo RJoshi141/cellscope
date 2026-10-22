@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 from flask import Flask, jsonify
 from flask_cors import CORS
@@ -13,7 +14,8 @@ def database_url():
         if os.environ.get("VERCEL"):
             # no DB attached yet: /tmp is the only writable path on Vercel (resets on cold start)
             return "sqlite:////tmp/cellscope.db"
-        return "sqlite:///cellscope.db"  # local dev, lands in instance/
+        # local dev: pin to backend/cellscope.db instead of Flask's instance-folder guess
+        return f"sqlite:///{Path(__file__).resolve().parents[2] / 'cellscope.db'}"
     # Neon/Heroku style URLs -> SQLAlchemy's psycopg 3 driver
     for prefix in ("postgres://", "postgresql://"):
         if url.startswith(prefix):
