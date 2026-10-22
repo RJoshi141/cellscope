@@ -13,7 +13,7 @@ import { HISTORY, POLL_MS, useTelemetry } from "./store";
 import type { Reading } from "./types";
 
 const REPO = "https://github.com/RJoshi141/cellscope";
-const PORTFOLIO = "https://rjoshi141.github.io/portfolio-v2/";
+const PORTFOLIO = "https://rjoshi141.github.io/portfolio-v2/#/work/cellscope";
 
 // x is simulated time: idle gaps are capped exactly like the backend's MAX_GAP,
 // so a quiet hour of nobody watching doesn't stretch the axis

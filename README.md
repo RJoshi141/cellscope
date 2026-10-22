@@ -2,7 +2,7 @@
 
 **Live smart-battery telemetry.** A Flask + SQLAlchemy API reads battery packs over an SMBus interface, decodes raw Smart Battery Data Spec registers, stores the readings in PostgreSQL, and serves them over REST and JSON-RPC 2.0. A React + TypeScript dashboard polls it live.
 
-**Live:** _add your Vercel URL here_ · **Case study:** _add your portfolio link here_
+**Live:** [cellscope-nine.vercel.app](https://cellscope-nine.vercel.app) · **Case study:** [rjoshi141.github.io/portfolio-v2](https://rjoshi141.github.io/portfolio-v2/#/work/cellscope)
 
 The SMBus layer is simulated (`FakeSMBus`), but it uses the same `read_word_data(addr, cmd)` interface as `smbus2`, so real hardware can replace it without touching the API or the UI.
 
