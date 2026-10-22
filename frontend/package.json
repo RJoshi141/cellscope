@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@progress/kendo-data-query": "^1.7.2",
     "@progress/kendo-licensing": "^1.11.3",
     "@progress/kendo-react-grid": "^16.2.0",
     "@progress/kendo-theme-default": "^14.7.0",

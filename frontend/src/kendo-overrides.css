@@ -1,0 +1,34 @@
+/* Re-skin the Kendo Grid to match the system: no chrome, hairlines, SF type. */
+.fleet-grid.k-grid {
+  min-width: 860px; /* scrolls inside .grid-wrap on phones instead of truncating */
+  border: 0; border-radius: var(--radius-lg); overflow: hidden;
+  font-family: var(--font-sans); font-size: 13px; color: var(--ink);
+  background: var(--surface); box-shadow: none;
+  --kendo-color-primary: var(--accent);
+}
+.fleet-grid .k-grid-header,
+.fleet-grid .k-grid-header-wrap,
+.fleet-grid .k-table-thead,
+.fleet-grid .k-grid-header .k-table-th { background: var(--surface); border-color: var(--hairline); }
+.fleet-grid .k-grid-header .k-table-th {
+  font-size: 11px; font-weight: 500; color: var(--ink-4); text-transform: none;
+  padding: 12px 14px; border-left: 0;
+}
+.fleet-grid .k-grid-header .k-table-th .k-link { padding: 0; }
+.fleet-grid .k-table-th.k-sorted, .fleet-grid .k-sort-icon { color: var(--ink-2); }
+.fleet-grid .k-table-td {
+  padding: 12px 14px; border-left: 0; border-color: var(--hairline);
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.fleet-grid .k-table-row { background: var(--surface); cursor: pointer; transition: background 0.15s; }
+.fleet-grid .k-table-row.k-table-alt-row { background: var(--surface); }
+.fleet-grid .k-table-row:hover { background: #f7f7f9; }
+.fleet-grid .k-table-row.k-selected > .k-table-td,
+.fleet-grid .k-table-row.k-selected > td,
+.fleet-grid .k-table-row.k-selected:hover > td,
+.fleet-grid .k-table-row.k-selected { background: #f2f7fe !important; color: var(--ink); }
+.fleet-grid .k-table-row.k-selected > td:first-child { box-shadow: inset 3px 0 0 var(--accent); font-weight: 600; }
+.fleet-grid .k-table-row:last-child .k-table-td { border-bottom: 0; }
+.fleet-grid .k-grid-content, .fleet-grid .k-grid-container { background: var(--surface); }
+.fleet-grid .k-table-th:nth-child(n+3), .fleet-grid .k-table-td:nth-child(n+3) { text-align: right; }
+.fleet-grid .k-table-th:nth-child(n+3) .k-cell-inner { justify-content: flex-end; }

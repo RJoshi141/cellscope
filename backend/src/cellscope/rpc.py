@@ -1,41 +1,63 @@
+"""JSON-RPC 2.0 endpoint at /api/rpc, alongside the REST routes."""
+
 from flask import Blueprint, jsonify, request
 
-from .api import poll
 from .extensions import db
 from .models import Battery
+from .telemetry import poll, poll_all
 
 rpc_bp = Blueprint("rpc", __name__)
 
 
-def _list(_params):
-    return [b.to_dict() for b in db.session.scalars(db.select(Battery))]
+class InvalidParams(Exception):
+    pass
 
 
-def _poll(params):
+def _battery(params):
+    if not isinstance(params, dict) or "battery_id" not in params:
+        raise InvalidParams("battery_id required")
     battery = db.session.get(Battery, params["battery_id"])
     if not battery:
-        raise KeyError("battery not found")
-    return poll(battery).to_dict()
+        raise InvalidParams("battery not found")
+    return battery
 
 
-METHODS = {"battery.list": _list, "battery.poll": _poll}
+METHODS = {
+    "battery.list": lambda p: [b.to_dict(b.latest_reading()) for b in db.session.scalars(db.select(Battery))],
+    "battery.poll": lambda p: poll(_battery(p)).to_dict(),
+    "fleet.poll": lambda p: [b.to_dict(r) for b, r in poll_all()],
+}
 
 
-def err(id_, code, msg):
-    return jsonify({"jsonrpc": "2.0", "id": id_, "error": {"code": code, "message": msg}})
+def error(id_, code, message):
+    return {"jsonrpc": "2.0", "id": id_, "error": {"code": code, "message": message}}
+
+
+def handle(req):
+    if not isinstance(req, dict) or req.get("jsonrpc") != "2.0" or not isinstance(req.get("method"), str):
+        return error(None, -32600, "Invalid Request")
+    id_ = req.get("id")
+    fn = METHODS.get(req["method"])
+    if not fn:
+        return error(id_, -32601, "Method not found")
+    try:
+        result = fn(req.get("params", {}))
+    except InvalidParams as e:
+        return error(id_, -32602, f"Invalid params: {e}")
+    if "id" not in req:
+        return None  # notification: spec says no response
+    return {"jsonrpc": "2.0", "id": id_, "result": result}
 
 
 @rpc_bp.post("/rpc")
 def rpc():
-    req = request.get_json(silent=True)
-    if not isinstance(req, dict) or req.get("jsonrpc") != "2.0" or "method" not in req:
-        return err(None, -32600, "Invalid Request")
-    id_ = req.get("id")
-    fn = METHODS.get(req["method"])
-    if not fn:
-        return err(id_, -32601, "Method not found")
-    try:
-        result = fn(req.get("params") or {})
-    except (KeyError, TypeError) as e:
-        return err(id_, -32602, f"Invalid params: {e}")
-    return jsonify({"jsonrpc": "2.0", "id": id_, "result": result})
+    body = request.get_json(silent=True)
+    if body is None:
+        return jsonify(error(None, -32700, "Parse error"))
+    if isinstance(body, list):  # batch request
+        if not body:
+            return jsonify(error(None, -32600, "Invalid Request"))
+        responses = [r for r in map(handle, body) if r is not None]
+        return (jsonify(responses), 200) if responses else ("", 204)
+    response = handle(body)
+    return (jsonify(response), 200) if response else ("", 204)
