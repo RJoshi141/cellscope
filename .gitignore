@@ -218,3 +218,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# CellScope
+node_modules/
+frontend/dist/
+*.db
+.DS_Store
