@@ -25,7 +25,7 @@ Needs [uv](https://docs.astral.sh/uv/) and Node 18+.
 ./scripts/dev.sh
 ```
 
-Dashboard on http://localhost:5173 (Vite proxies `/api` to Flask on :5001). Four demo packs are seeded on first run.
+Dashboard on http://localhost:5173 (Vite proxies `/api` to Flask on :5001). Two laptop and two phone batteries are seeded on first run.
 
 ```bash
 cd backend && uv run pytest
@@ -48,7 +48,7 @@ Browser ──every 2s──▶ POST /api/poll ──▶ telemetry.poll_all()
 
 ## The simulator
 
-Each pack is a 3S Li-ion pack with a usage profile (light / standard / heavy):
+The demo fleet is two laptop packs (3 cells in series, ~11 V) and two phone batteries (single cell, ~3.7 V), each with a usage profile (light / standard / heavy):
 
 - **Coulomb counting**: remaining capacity integrates current over time
 - **Voltage** = cells × (open-circuit voltage from SoC curve + I × internal resistance), so it sags under load and rises while charging

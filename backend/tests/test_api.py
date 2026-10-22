@@ -5,7 +5,7 @@ import pytest
 
 from cellscope import create_app, database_url
 from cellscope.extensions import db
-from cellscope.models import Battery
+from cellscope.models import Battery, Reading
 from cellscope.simulator import (
     DISCHARGING, FakeSMBus, initial_state, ocv_per_cell, read_battery, step,
 )
@@ -122,7 +122,22 @@ def test_seed_demo_is_idempotent():
     with app.app_context():
         from cellscope.telemetry import seed_demo
         seed_demo()
+        seed_demo()
         assert db.session.query(Battery).count() == 4
+
+
+def test_seed_updates_existing_pack_config():
+    app = create_app({"SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:", "SEED_DEMO": False})
+    with app.app_context():
+        from cellscope.telemetry import seed_demo
+        db.session.add(Battery(serial="CS-24A-0001", name="Pack 01", design_capacity_mah=5100, series_cells=3))
+        db.session.commit()
+        poll(db.session.scalar(db.select(Battery)))  # a reading from the old 3-cell config
+        seed_demo()
+        assert db.session.query(Reading).count() == 0  # stale history cleared
+        phone = db.session.scalar(db.select(Battery).filter_by(serial="CS-24A-0001"))
+        assert (phone.name, phone.series_cells) == ("Phone 01", 1)
+        assert [b["name"] for b in app.test_client().get("/api/batteries").get_json()][0].startswith("Laptop")
 
 
 def test_database_url_rewrites_postgres(monkeypatch):

@@ -13,7 +13,6 @@ function stats(r: Reading): Stat[] {
     { label: "Power", value: watts(r.power_w), unit: "W", note: "V × I" },
     { label: "Temperature", value: celsius(r.temp_c), unit: "°C", note: r.temp_c >= WARM_C ? "Running warm" : "Within normal range" },
     time,
-    { label: "Cycle count", value: String(r.cycle_count), note: "Completed charge cycles" },
   ];
 }
 
@@ -31,7 +30,7 @@ export function StatRow({ reading }: { reading: Reading | null }) {
               <div className="stat-note">{s.note}</div>
             </div>
           ))
-        : Array.from({ length: 6 }, (_, i) => (
+        : Array.from({ length: 5 }, (_, i) => (
             <div className="stat" key={i}>
               <div className="skeleton" style={{ height: 12, width: 70 }} />
               <div className="skeleton" style={{ height: 26, width: 90, marginTop: 10 }} />

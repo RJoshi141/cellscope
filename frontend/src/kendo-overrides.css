@@ -1,34 +1,41 @@
-/* Re-skin the Kendo Grid to match the system: no chrome, hairlines, SF type. */
-.fleet-grid.k-grid {
-  min-width: 860px; /* scrolls inside .grid-wrap on phones instead of truncating */
-  border: 0; border-radius: var(--radius-lg); overflow: hidden;
-  font-family: var(--font-sans); font-size: 13px; color: var(--ink);
-  background: var(--surface); box-shadow: none;
+/* Re-skin the KendoReact Grid (reading log) to match the system: no chrome, hairlines, SF type. */
+.log-grid.k-grid {
+  min-width: 900px; /* scrolls inside .grid-wrap on phones */
+  border: 0; border-radius: 0; font-family: var(--font-sans); font-size: 13px; color: var(--ink);
+  background: var(--surface);
   --kendo-color-primary: var(--accent);
+  --kendo-color-on-app-surface: var(--ink);
 }
-.fleet-grid .k-grid-header,
-.fleet-grid .k-grid-header-wrap,
-.fleet-grid .k-table-thead,
-.fleet-grid .k-grid-header .k-table-th { background: var(--surface); border-color: var(--hairline); }
-.fleet-grid .k-grid-header .k-table-th {
-  font-size: 11px; font-weight: 500; color: var(--ink-4); text-transform: none;
-  padding: 12px 14px; border-left: 0;
+.log-grid .k-grid-header, .log-grid .k-grid-header-wrap, .log-grid .k-table-thead,
+.log-grid .k-grid-header .k-table-th, .log-grid .k-grid-content, .log-grid .k-grid-container {
+  background: var(--surface); border-color: var(--hairline);
 }
-.fleet-grid .k-grid-header .k-table-th .k-link { padding: 0; }
-.fleet-grid .k-table-th.k-sorted, .fleet-grid .k-sort-icon { color: var(--ink-2); }
-.fleet-grid .k-table-td {
-  padding: 12px 14px; border-left: 0; border-color: var(--hairline);
-  font-variant-numeric: tabular-nums; white-space: nowrap;
+.log-grid .k-grid-header .k-table-th { font-size: 12px; font-weight: 500; color: var(--ink-4); padding: 0; border-left: 0; }
+.log-grid .k-grid-header .k-table-th .k-cell-inner { margin: 0; }
+.log-grid .k-grid-header .k-table-th .k-link { padding: 13px 16px 11px; width: 100%; }
+.log-grid .k-grid-header .k-table-th:hover .k-column-title { color: var(--ink-2); }
+.log-grid .k-table-th.k-sorted { color: var(--ink); }
+.log-grid .k-sort-icon, .log-grid .k-sort-order { color: var(--accent); }
+.log-grid .k-table-td {
+  padding: 9px 16px; border-left: 0; border-color: var(--hairline); white-space: nowrap; font-size: 12.5px;
 }
-.fleet-grid .k-table-row { background: var(--surface); cursor: pointer; transition: background 0.15s; }
-.fleet-grid .k-table-row.k-table-alt-row { background: var(--surface); }
-.fleet-grid .k-table-row:hover { background: #f7f7f9; }
-.fleet-grid .k-table-row.k-selected > .k-table-td,
-.fleet-grid .k-table-row.k-selected > td,
-.fleet-grid .k-table-row.k-selected:hover > td,
-.fleet-grid .k-table-row.k-selected { background: #f2f7fe !important; color: var(--ink); }
-.fleet-grid .k-table-row.k-selected > td:first-child { box-shadow: inset 3px 0 0 var(--accent); font-weight: 600; }
-.fleet-grid .k-table-row:last-child .k-table-td { border-bottom: 0; }
-.fleet-grid .k-grid-content, .fleet-grid .k-grid-container { background: var(--surface); }
-.fleet-grid .k-table-th:nth-child(n+3), .fleet-grid .k-table-td:nth-child(n+3) { text-align: right; }
-.fleet-grid .k-table-th:nth-child(n+3) .k-cell-inner { justify-content: flex-end; }
+.log-grid .k-table-td.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: 0; }
+.log-grid .num-col { text-align: right; }
+.log-grid .k-table-th.num-col .k-cell-inner,
+.log-grid .k-table-th.num-col .k-link { justify-content: flex-end; text-align: right; }
+.log-grid .k-table-row, .log-grid .k-table-row.k-table-alt-row { background: var(--surface); }
+.log-grid .k-table-row:hover { background: #fafafc; }
+.log-grid .k-table-row:first-child .k-table-td { padding-top: 11px; }
+
+/* pager */
+.log-grid .k-pager {
+  border: 0; border-top: 1px solid var(--hairline); background: var(--surface); padding: 10px 14px;
+  font-family: var(--font-sans); font-size: 12px; color: var(--ink-3);
+}
+.log-grid .k-pager .k-button { border-radius: 8px; color: var(--ink-2); font-size: 12px; min-width: 30px; height: 30px; }
+.log-grid .k-pager .k-button.k-selected,
+.log-grid .k-pager .k-button.k-selected:hover { background: var(--ink) !important; color: #fff !important; }
+.log-grid .k-pager .k-button.k-selected .k-button-text { color: #fff; }
+.log-grid .k-pager .k-button:hover:not(.k-selected) { background: #f2f2f4; }
+.log-grid .k-pager .k-button::before, .log-grid .k-pager .k-button::after { display: none; }
+.log-grid .k-pager-info { color: var(--ink-4); }

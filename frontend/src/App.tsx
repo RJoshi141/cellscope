@@ -1,25 +1,42 @@
 import { useEffect, useMemo } from "react";
 import { BatteryGlyph } from "./components/BatteryGlyph";
-import { FleetTable } from "./components/FleetTable";
+import { HowItWorks } from "./components/HowItWorks";
+import { ReadingLog } from "./components/ReadingLog";
 import { MetricChart, type Point } from "./components/MetricChart";
 import { PackCard } from "./components/PackCard";
 import { PackSpec } from "./components/PackSpec";
 import { RegisterInspector } from "./components/RegisterInspector";
 import { StatRow } from "./components/StatRow";
-import { StatusPill } from "./components/StatusPill";
-import { OVER_TEMP_C, packState, signed, WARM_C } from "./format";
+import { DeviceIcon, deviceKind } from "./components/DeviceIcon";
+import { OVER_TEMP_C, signed, WARM_C } from "./format";
 import { HISTORY, POLL_MS, useTelemetry } from "./store";
 import type { Reading } from "./types";
 
 const REPO = "https://github.com/RJoshi141/cellscope";
 const PORTFOLIO = "https://rjoshi141.github.io/portfolio-v2/";
 
-const series = (rows: Reading[], pick: (r: Reading) => number): Point[] =>
-  rows.map((r) => ({ t: Date.parse(r.ts), v: pick(r) }));
+// x is simulated time: idle gaps are capped exactly like the backend's MAX_GAP,
+// so a quiet hour of nobody watching doesn't stretch the axis
+const MAX_GAP_MS = 30_000;
+const series = (rows: Reading[], pick: (r: Reading) => number): Point[] => {
+  let t = 0;
+  return rows.map((r, i) => {
+    const real = Date.parse(r.ts);
+    if (i > 0) t += Math.min(real - Date.parse(rows[i - 1].ts), MAX_GAP_MS);
+    return { t, v: pick(r), real };
+  });
+};
 
-// round chart bounds outward to a clean step so ticks land on readable numbers
-const floorTo = (step: number, pad = 0) => (v: number) => Math.floor((v - pad) / step) * step;
-const ceilTo = (step: number, pad = 0) => (v: number) => Math.ceil((v + pad) / step) * step;
+// pick the smallest "nice" step that gives at most 5 intervals, so ticks land on even numbers
+function niceScale(values: number[], include: number[] = []) {
+  const all = [...values, ...include];
+  if (!all.length) return { domain: [0, 1] as [number, number], ticks: [0, 1] };
+  const min = Math.min(...all), max = Math.max(...all);
+  const step = [0.05, 0.1, 0.2, 0.25, 0.5, 1, 2, 5, 10].find((s) => Math.ceil(max / s) - Math.floor(min / s) <= 5) ?? 10;
+  const lo = Math.floor(min / step) * step, hi = Math.max(Math.ceil(max / step) * step, lo + step);
+  const ticks = Array.from({ length: Math.round((hi - lo) / step) + 1 }, (_, i) => +(lo + i * step).toFixed(2));
+  return { domain: [lo, hi] as [number, number], ticks };
+}
 
 export default function App() {
   const { fleet, history, selectedId, status, select, tick } = useTelemetry();
@@ -39,15 +56,18 @@ export default function App() {
   // history's newest row carries the raw register words
   const latest = history.length ? history[history.length - 1] : selected?.latest ?? null;
 
-  const charts = useMemo(
-    () => ({
+  const charts = useMemo(() => {
+    const voltage = series(history, (r) => r.voltage_mv / 1000);
+    const current = series(history, (r) => r.current_ma / 1000);
+    return {
       soc: series(history, (r) => r.soc_pct),
-      voltage: series(history, (r) => r.voltage_mv / 1000),
-      current: series(history, (r) => r.current_ma / 1000),
+      voltage,
+      current,
       temp: series(history, (r) => r.temp_c),
-    }),
-    [history],
-  );
+      vScale: niceScale(voltage.map((p) => p.v)),
+      iScale: niceScale(current.map((p) => p.v), [0]), // keep the zero line in view
+    };
+  }, [history]);
 
   return (
     <>
@@ -63,7 +83,6 @@ export default function App() {
               <span className="live-dot" />
               {status === "error" ? "Offline" : status === "loading" ? "Connecting" : "Live"}
             </span>
-            <span className="hide-sm">60× simulation</span>
             <a href={PORTFOLIO} className="hide-sm">Case study</a>
             <a href={REPO}>GitHub</a>
           </nav>
@@ -74,8 +93,8 @@ export default function App() {
         <section className="hero">
           <h1>Battery telemetry, live.</h1>
           <p>
-            Four smart battery packs reporting over a simulated SMBus. Every value is decoded from raw Smart Battery
-            Data Spec registers, stored in PostgreSQL, and served by a Flask API. One real second is one simulated minute.
+            Reads the registers a battery's gas-gauge chip reports over SMBus, decodes them, and charts each battery as
+            it charges, drains, heats up and wears. Simulated at 60× real time. <a href="#how-it-works">How it works</a>
           </p>
         </section>
 
@@ -83,11 +102,7 @@ export default function App() {
           <div className="banner" role="alert">Can't reach the telemetry API. Retrying every {POLL_MS / 1000}s.</div>
         )}
 
-        <div className="section-head">
-          <h2>Fleet</h2>
-          <span className="aside">Select a pack to inspect it</span>
-        </div>
-        <div className="fleet">
+        <div className="fleet" style={{ marginTop: 8 }}>
           {fleet.length
             ? fleet.map((b) => (
                 <PackCard key={b.id} battery={b} selected={b.id === selectedId} onSelect={() => select(b.id)} />
@@ -99,25 +114,22 @@ export default function App() {
           <>
             <div className="detail-head">
               <div className="detail-title">
-                <BatteryGlyph soc={latest?.soc_pct ?? 0} charging={!!latest?.charging} width={64} />
+                <span className="detail-icon"><DeviceIcon kind={deviceKind(selected)} size={28} /></span>
                 <div>
-                  <h2>
-                    {selected.name} <span className="num" style={{ color: "var(--ink-3)", fontWeight: 600 }}>{latest?.soc_pct ?? "–"}%</span>
-                  </h2>
+                  <h2>{selected.name}</h2>
                   <div className="detail-sub">
-                    <span className="mono">{selected.serial}</span> · {selected.series_cells}S Li-ion ·{" "}
-                    {selected.design_capacity_mah.toLocaleString()} mAh design
+                    {selected.series_cells}S Li-ion · {selected.design_capacity_mah.toLocaleString()} mAh ·{" "}
+                    <span className="mono">{selected.serial}</span>
                   </div>
                 </div>
               </div>
-              <StatusPill {...packState(latest)} />
             </div>
 
             <StatRow reading={latest} />
 
             <div className="section-head">
-              <h2>Last {HISTORY} readings</h2>
-              <span className="aside">≈ {Math.round((HISTORY * POLL_MS * 60) / 3_600_000)} simulated hours · hover to compare</span>
+              <h2>History</h2>
+              <span className="aside">Last {HISTORY} readings</span>
             </div>
             <div className="charts" style={{ marginTop: 0 }}>
               <MetricChart
@@ -126,15 +138,15 @@ export default function App() {
               />
               <MetricChart
                 title="Voltage" unit="V" data={charts.voltage} format={(v) => v.toFixed(2)}
-                domain={[floorTo(0.5, 0.1), ceilTo(0.5, 0.1)]}
+                domain={charts.vScale.domain} ticks={charts.vScale.ticks}
               />
               <MetricChart
-                title="Current · charging above zero" unit="A" data={charts.current} format={(v) => signed(v, 1)}
-                domain={[(v) => Math.min(-1, floorTo(1)(v)), (v) => Math.max(1, ceilTo(1)(v))]} area baseline={0}
+                title="Current" unit="A" data={charts.current} format={(v) => signed(v, 1)}
+                domain={charts.iScale.domain} ticks={charts.iScale.ticks} area baseline={0}
               />
               <MetricChart
                 title="Temperature" unit="°C" data={charts.temp} format={(v) => v.toFixed(0)}
-                domain={[20, (v) => Math.max(50, ceilTo(5)(v))]} ticks={[20, 30, 40, 50]}
+                domain={[20, 50]} ticks={[20, 30, 40, 50]}
                 refs={[
                   { y: WARM_C, label: "Warm", tone: "warning" },
                   { y: OVER_TEMP_C, label: "Over-temp alarm", tone: "critical" },
@@ -149,19 +161,23 @@ export default function App() {
           </>
         )}
 
-        <div className="section-head">
-          <h2>All packs</h2>
-          <span className="aside">KendoReact Grid · sortable</span>
-        </div>
-        <div className="grid-wrap">
-          <FleetTable fleet={fleet} selectedId={selectedId} onSelect={select} />
-        </div>
+        {selected && (
+          <>
+            <div className="section-head">
+              <h2>Reading log</h2>
+              <span className="aside">Newest first</span>
+            </div>
+            <div className="grid-wrap">
+              <ReadingLog history={history} />
+            </div>
+          </>
+        )}
+
+        <HowItWorks repo={REPO} />
 
         <footer className="footer">
-          <span>Built by Ritika Joshi · Flask · SQLAlchemy · PostgreSQL · React · TypeScript · Zustand</span>
-          <span>
-            Simulated hardware, real protocol. <a href={REPO}>Source on GitHub</a>
-          </span>
+          <span>Built by Ritika Joshi</span>
+          <a href={REPO}>Source on GitHub</a>
         </footer>
       </main>
     </>

@@ -4,7 +4,7 @@ from flask import Blueprint, jsonify, request
 
 from .extensions import db
 from .models import Battery
-from .telemetry import poll, poll_all
+from .telemetry import fleet_query, poll, poll_all
 
 rpc_bp = Blueprint("rpc", __name__)
 
@@ -23,7 +23,7 @@ def _battery(params):
 
 
 METHODS = {
-    "battery.list": lambda p: [b.to_dict(b.latest_reading()) for b in db.session.scalars(db.select(Battery))],
+    "battery.list": lambda p: [b.to_dict(b.latest_reading()) for b in db.session.scalars(fleet_query())],
     "battery.poll": lambda p: poll(_battery(p)).to_dict(),
     "fleet.poll": lambda p: [b.to_dict(r) for b, r in poll_all()],
 }

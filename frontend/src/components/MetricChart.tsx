@@ -3,7 +3,7 @@ import {
 } from "recharts";
 import { clock, simAgo } from "../format";
 
-export type Point = { t: number; v: number };
+export type Point = { t: number; v: number; real: number }; // t: sim-scaled ms, real: wall clock
 type Bound = number | ((edge: number) => number);
 
 type Ref = { y: number; label: string; tone: "warning" | "critical" };
@@ -30,7 +30,7 @@ function ChartTooltip({ active, payload, unit, format, now }: {
   const p = payload[0].payload;
   return (
     <div className="tooltip">
-      <div className="tooltip-time">{simAgo(p.t, now)} · {clock(p.t)}</div>
+      <div className="tooltip-time">{simAgo(p.t, now)} · {clock(p.real)}</div>
       <div className="tooltip-value">
         {format(p.v)}
         <small>{unit}</small>

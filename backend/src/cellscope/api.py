@@ -3,7 +3,7 @@ from flask import Blueprint, abort, jsonify, request
 from .extensions import db
 from .models import Battery, Reading
 from .simulator import PROFILES
-from .telemetry import poll, poll_all
+from .telemetry import fleet_query, poll, poll_all
 
 api_bp = Blueprint("api", __name__)
 
@@ -16,7 +16,7 @@ def health():
 
 @api_bp.get("/batteries")
 def list_batteries():
-    batteries = db.session.scalars(db.select(Battery).order_by(Battery.id))
+    batteries = db.session.scalars(fleet_query())
     return jsonify([b.to_dict(b.latest_reading()) for b in batteries])
 
 
